@@ -155,9 +155,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   void calculate() {
-    if (number1.isEmpty) return;
-    if (operand.isEmpty) return;
-    if (number2.isEmpty) return;
+    if (number1.isEmpty || operand.isEmpty || number2.isEmpty) {
+      return;
+    }
 
     final double num1 = double.parse(number1);
     final double num2 = double.parse(number2);
@@ -179,18 +179,21 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       default:
     }
 
-    setState(() {
-      number1 = result % 1 == 0
-          ? result.toStringAsFixed(0)
-          : result.toStringAsFixed(6);
+    // Format result as integer or decimal as needed
+    final formattedResult =
+    result % 1 == 0 ? result.toStringAsFixed(0) : result.toStringAsFixed(6);
 
+    setState(() {
+      // Add to history in the proper format: "2 + 3 = 5"
+      calculationHistory.add("$number1 $operand $number2 = $formattedResult");
+
+      // Update current display with the result
+      number1 = formattedResult;
       operand = "";
       number2 = "";
-
-      // Add to history
-      calculationHistory.add("$number1 $operand $number2 = $result");
     });
   }
+
 
 
   void convertToPercentage() {
@@ -202,9 +205,19 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       return;
     }
 
-    final number = double.parse(number1);
+    final double number = double.parse(number1);
+
     setState(() {
-      number1 = "${(number / 100)}";
+      final result = number / 100;
+      // Format the result
+      final formattedResult =
+      result % 1 == 0 ? result.toStringAsFixed(0) : result.toStringAsFixed(6);
+
+      // Add to history in the proper format: "X% = Y"
+      calculationHistory.add("$number1% = $formattedResult");
+
+      // Update display
+      number1 = formattedResult;
       operand = "";
       number2 = "";
     });
@@ -225,10 +238,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     }
 
     setState(() {
-      number1 = sqrt(num).toStringAsFixed(6);
-      if (number1.endsWith(".000000")) {
-        number1 = number1.substring(0, number1.length - 7);
-      }
+      final result = sqrt(num);
+      // Format the result
+      final formattedResult =
+      result % 1 == 0 ? result.toStringAsFixed(0) : result.toStringAsFixed(6);
+
+      // Add to history in the proper format: "√X = Y"
+      calculationHistory.add("√$number1 = $formattedResult");
+
+      // Update display
+      number1 = formattedResult;
     });
   }
 
