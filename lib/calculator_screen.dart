@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'HistoryPage.dart';
 import 'button_values.dart';
 import 'dart:math';
 
@@ -14,6 +15,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   String operand = "";
   String number2 = "";
 
+  // Add the calculation history list
+  List<String> calculationHistory = [];
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -22,7 +26,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         bottom: false,
         child: Column(
           children: [
-            // calculation output display screen
             Expanded(
               child: SingleChildScrollView(
                 reverse: true,
@@ -43,18 +46,35 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               ),
             ),
 
-            // buttons
+            // New Row for History and DEL Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space out History and DEL buttons
+              children: [
+                // History Button (Left-aligned)
+                SizedBox(
+                  width: screenSize.width / 4, // Same size as other buttons
+                  height: screenSize.width / 5,
+                  child: buildButton(Btn.history),
+                ),
+                // DEL Button (Right-aligned)
+                SizedBox(
+                  width: screenSize.width / 4,
+                  height: screenSize.width / 5,
+                  child: buildButton(Btn.del),
+                ),
+              ],
+            ),
             Wrap(
               children: Btn.buttonValues
                   .map(
                     (value) => SizedBox(
-                      width: value == Btn.n0
-                          ? screenSize.width / 2
-                          : (screenSize.width / 4),
-                      height: screenSize.width / 5,
-                      child: buildButton(value),
-                    ),
-                  )
+                  width: value == Btn.n0
+                      ? screenSize.width / 2
+                      : (screenSize.width / 4),
+                  height: screenSize.width / 5,
+                  child: buildButton(value),
+                ),
+              )
                   .toList(),
             )
           ],
@@ -70,13 +90,27 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         color: getBtnColor(value),
         clipBehavior: Clip.hardEdge,
         shape: OutlineInputBorder(
-          borderSide: const BorderSide(
-            color: Colors.white10,
+          borderSide: BorderSide(
+            color: value == Btn.del || value == Btn.history
+                ? Colors.transparent // Transparent border for DEL and History buttons
+                : Colors.white10,   // Default border for other buttons
           ),
           borderRadius: BorderRadius.circular(80),
         ),
         child: InkWell(
-          onTap: () => onBtnTap(value),
+          onTap: () {
+            if (value == Btn.history) {
+              // Navigate to the History Page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HistoryPage(history: calculationHistory),
+                ),
+              );
+              return;
+            }
+            onBtnTap(value);
+          },
           child: Center(
             child: Text(
               value,
@@ -120,8 +154,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     appendValue(value);
   }
 
-
-  // calculates the result
   void calculate() {
     if (number1.isEmpty) return;
     if (operand.isEmpty) return;
@@ -149,25 +181,24 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
     setState(() {
       number1 = result % 1 == 0
-          ? result.toStringAsFixed(0) // If divisible, no decimals
-          : result.toStringAsFixed(6); // Show up to 6 decimals if non-divisible
+          ? result.toStringAsFixed(0)
+          : result.toStringAsFixed(6);
 
       operand = "";
       number2 = "";
+
+      // Add to history
+      calculationHistory.add("$number1 $operand $number2 = $result");
     });
   }
 
 
-  // converts output to %
   void convertToPercentage() {
-    // ex: 434+324
     if (number1.isNotEmpty && operand.isNotEmpty && number2.isNotEmpty) {
-      // calculate before conversion
       calculate();
     }
 
     if (operand.isNotEmpty) {
-      // cannot be converted
       return;
     }
 
@@ -181,29 +212,26 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   void calculateSquareRoot() {
     if (number1.isEmpty || operand.isNotEmpty || number2.isNotEmpty) {
-      // Only perform square root if no pending operation
       return;
     }
 
     final double num = double.parse(number1);
 
     if (num < 0) {
-      // Handle negative numbers (optional)
       setState(() {
-        number1 = "Error"; // Square root of a negative number is undefined in real numbers
+        number1 = "Error";
       });
       return;
     }
 
     setState(() {
-      number1 = sqrt(num).toStringAsFixed(6); // Up to 6 decimal places
+      number1 = sqrt(num).toStringAsFixed(6);
       if (number1.endsWith(".000000")) {
-        number1 = number1.substring(0, number1.length - 7); // Remove trailing zeros
+        number1 = number1.substring(0, number1.length - 7);
       }
     });
   }
 
-  // clears all output
   void clearAll() {
     setState(() {
       number1 = "";
@@ -212,10 +240,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     });
   }
 
-  // delete one from the end
   void delete() {
     if (number2.isNotEmpty) {
-      // 12323 => 1232
       number2 = number2.substring(0, number2.length - 1);
     } else if (operand.isNotEmpty) {
       operand = "";
@@ -226,34 +252,21 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     setState(() {});
   }
 
-  // appends value to the end
   void appendValue(String value) {
-    // number1 opernad number2
-
-    // if is operand and not "."
     if (value != Btn.dot && int.tryParse(value) == null) {
-      // operand pressed
       if (operand.isNotEmpty && number2.isNotEmpty) {
         calculate();
       }
       operand = value;
-    }
-    // assign value to number1 variable
-    else if (number1.isEmpty || operand.isEmpty) {
-      // check if value is "." | ex: number1 = "1.2"
+    } else if (number1.isEmpty || operand.isEmpty) {
       if (value == Btn.dot && number1.contains(Btn.dot)) return;
       if (value == Btn.dot && (number1.isEmpty || number1 == Btn.n0)) {
-        // ex: number1 = "" | "0"
         value = "0.";
       }
       number1 += value;
-    }
-    // assign value to number2 variable
-    else if (number2.isEmpty || operand.isNotEmpty) {
-      // check if value is "." | ex: number1 = "1.2"
+    } else if (number2.isEmpty || operand.isNotEmpty) {
       if (value == Btn.dot && number2.contains(Btn.dot)) return;
       if (value == Btn.dot && (number2.isEmpty || number2 == Btn.n0)) {
-        // number1 = "" | "0"
         value = "0.";
       }
       number2 += value;
@@ -262,9 +275,13 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     setState(() {});
   }
 
-  // apply color to the function buttons
   Color getBtnColor(value) {
-    return [Btn.del, Btn.clr].contains(value)
+    if ([Btn.del, Btn.history].contains(value)) {
+      // Set DEL button color to transparent
+      return Colors.transparent;
+    }
+
+    return [Btn.clr].contains(value)
         ? Colors.blueGrey
         : [
       Btn.per,
@@ -278,4 +295,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         ? Colors.indigoAccent
         : Colors.black45;
   }
+
 }
+
