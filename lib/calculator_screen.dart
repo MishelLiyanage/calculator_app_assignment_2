@@ -250,8 +250,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       number1 = formattedResult;
     });
   }
-
   void clearAll() {
+    // Reset all calculator inputs (number1, operand, number2) to empty strings
     setState(() {
       number1 = "";
       operand = "";
@@ -260,48 +260,74 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   void delete() {
+    // Check if the second number (number2) is not empty
     if (number2.isNotEmpty) {
+      // Remove the last character from number2
       number2 = number2.substring(0, number2.length - 1);
-    } else if (operand.isNotEmpty) {
+    }
+    // If number2 is empty, check if the operand exists
+    else if (operand.isNotEmpty) {
+      // Clear the operand
       operand = "";
-    } else if (number1.isNotEmpty) {
+    }
+    // If both number2 and operand are empty, check number1
+    else if (number1.isNotEmpty) {
+      // Remove the last character from number1
       number1 = number1.substring(0, number1.length - 1);
     }
 
+    // Trigger a UI update
     setState(() {});
   }
 
   void appendValue(String value) {
+    // If the value is not a decimal point (.) or a number, it is an operator
     if (value != Btn.dot && int.tryParse(value) == null) {
+      // Perform a calculation if both operand and number2 are not empty
       if (operand.isNotEmpty && number2.isNotEmpty) {
         calculate();
       }
+      // Assign the operator to the operand
       operand = value;
-    } else if (number1.isEmpty || operand.isEmpty) {
-      if (value == Btn.dot && number1.contains(Btn.dot)) return;
+    }
+    // If the first number (number1) or operand is empty
+    else if (number1.isEmpty || operand.isEmpty) {
+      // Prevent multiple decimal points in number1
+      if (value == Btn.dot && number1.contains(Btn.dot))
+        return;
+      // If the input is a decimal point, ensure number1 starts with "0."
       if (value == Btn.dot && (number1.isEmpty || number1 == Btn.n0)) {
         value = "0.";
       }
+      // Append the value to number1
       number1 += value;
-    } else if (number2.isEmpty || operand.isNotEmpty) {
+    }
+    // If number2 is being entered (operand is set)
+    else if (number2.isEmpty || operand.isNotEmpty) {
+      // Prevent multiple decimal points in number2
       if (value == Btn.dot && number2.contains(Btn.dot)) return;
+      // If the input is a decimal point, ensure number2 starts with "0."
       if (value == Btn.dot && (number2.isEmpty || number2 == Btn.n0)) {
         value = "0.";
       }
+      // Append the value to number2
       number2 += value;
     }
 
+    // Trigger a UI update
     setState(() {});
   }
 
   Color getBtnColor(value) {
+    // If the button is DEL or HISTORY, set its color to transparent
     if ([Btn.del, Btn.history].contains(value)) {
-      // Set DEL button color to transparent
       return Colors.transparent;
     }
 
+    // If the button is CLR, set its color to blue-grey
     return [Btn.clr].contains(value)
         ? Colors.blueGrey
+    // For operator buttons, set their color to indigo accent
         : [
       Btn.per,
       Btn.multiply,
@@ -312,8 +338,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       Btn.sqrt
     ].contains(value)
         ? Colors.indigoAccent
+    // For all other buttons, set the color to black-grey
         : Colors.black45;
   }
 
-}
 
